@@ -1,6 +1,6 @@
 import { interval, of } from 'rxjs';
 import { ajax } from 'rxjs/ajax';
-import { map, catchError } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 
 import createNewElement from './createNewElement.js';
 import createIncomingMsgPreview from './createIncomingMsgPreview.js';
@@ -25,7 +25,14 @@ const currentUnreadMessages = [];
 const timer = interval(1000);
 timer.subscribe(() => {
   const response = ajax.getJSON(`${url}/messages/unread`).pipe(
-    map((result) => {
+    catchError(() => of('no new messages')),
+  );
+  response.subscribe(
+    (result) => {
+      if (result === 'no new messages') {
+        console.log(result);
+        return;
+      }
       const unreadMessages = result.messages;
       unreadMessages.forEach((message) => {
         const isExist = currentUnreadMessages.find((item) => item === message.id);
@@ -35,8 +42,6 @@ timer.subscribe(() => {
           currentUnreadMessages.push(message.id);
         }
       });
-    }),
-    catchError((error) => of(error)),
+    },
   );
-  response.subscribe();
 });
