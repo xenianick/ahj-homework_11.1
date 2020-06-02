@@ -1,6 +1,6 @@
 import { interval, of } from 'rxjs';
 import { ajax } from 'rxjs/ajax';
-import { catchError } from 'rxjs/operators';
+import { catchError, pluck, mergeMap } from 'rxjs/operators';
 
 import createNewElement from './createNewElement.js';
 import createIncomingMsgPreview from './createIncomingMsgPreview.js';
@@ -22,26 +22,26 @@ const url = 'https://ahj-homework-11-1.herokuapp.com';
 
 const currentUnreadMessages = [];
 
-const timer = interval(1000);
-timer.subscribe(() => {
-  const response = ajax.getJSON(`${url}/messages/unread`).pipe(
-    catchError(() => of('no new messages')),
-  );
-  response.subscribe(
-    (result) => {
-      if (result === 'no new messages') {
-        console.log(result);
-        return;
+interval(1000)
+  .pipe(
+    mergeMap(() => {
+      const unreadMessages = ajax.getJSON(`${url}/messages/unread`).pipe(
+        catchError(() => of({ messages: 'no new messages' })),
+        pluck('messages'),
+      );
+      return unreadMessages;
+    }),
+  )
+  .subscribe((unreadMessages) => {
+    if (unreadMessages === 'no new messages') {
+      console.log(unreadMessages);
+    }
+    unreadMessages.forEach((message) => {
+      const isExist = currentUnreadMessages.find((item) => item === message.id);
+      if (!isExist) {
+        const preview = createIncomingMsgPreview(message.from, message.subject, message.received);
+        incomingWrapper.prepend(preview);
+        currentUnreadMessages.push(message.id);
       }
-      const unreadMessages = result.messages;
-      unreadMessages.forEach((message) => {
-        const isExist = currentUnreadMessages.find((item) => item === message.id);
-        if (!isExist) {
-          const preview = createIncomingMsgPreview(message.from, message.subject, message.received);
-          incomingWrapper.prepend(preview);
-          currentUnreadMessages.push(message.id);
-        }
-      });
-    },
-  );
-});
+    });
+  });
