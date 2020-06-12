@@ -18,7 +18,7 @@ incomingContainer.appendChild(incomingWrapper);
 mainContainer.appendChild(incomingContainer);
 bodyEl.insertBefore(mainContainer, bodyEl.firstChild);
 
-const url = 'https://ahj-homework-11-1.herokuapp.com';
+const url = 'http://localhost:7070'; // 'https://ahj-homework-11-1.herokuapp.com';
 
 const currentUnreadMessages = [];
 
@@ -35,6 +35,7 @@ interval(1000)
   .subscribe((unreadMessages) => {
     if (unreadMessages === 'no new messages') {
       console.log(unreadMessages);
+      return;
     }
     unreadMessages.forEach((message) => {
       const isExist = currentUnreadMessages.find((item) => item === message.id);
